@@ -1,0 +1,11 @@
+total 124
+-rwx------. 1 simonsyq majors 23330 Oct 10 22:16 EXAMPLE-SESSION.gdb
+-rw-------. 1 simonsyq majors     0 Oct 20 22:34 FILES.txt
+-rwx------. 1 simonsyq majors  3576 Oct 10 22:16 help.txt
+-rwx------. 1 simonsyq majors  9512 Oct 10 22:16 hw4
+-rwx------. 1 simonsyq majors  8240 Oct 20 22:33 hw4.c
+-rwx------. 1 simonsyq majors   616 Oct 10 22:16 Makefile
+-rwxr-xr-x. 1 simonsyq majors 17208 Oct 20 22:33 myshell
+-rwx------. 1 simonsyq majors  3535 Oct 10 22:16 pipe-example.c
+-rwx--x--x. 1 simonsyq majors   145 Oct 13 15:44 script.myshell
+-rwx------. 1 simonsyq majors 28737 Oct 10 22:22 vitutor.vi

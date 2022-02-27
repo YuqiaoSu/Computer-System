@@ -1,0 +1,72 @@
+Process:
+1: root/proc.c , on line 13, structure : struct ptable
+
+2:The registers are stored in struct "context" from function swtch.S that is in proc.h, Line 44.
+
+3:UNUSED: the empty slot in ptable such that can be created to a process.
+EMBRYO: the process created by using one of UNUSED in ptable
+RUNNABLE: the process is ready to be executed by CPU
+RUNNING: the CPU is executing this process
+SLEEPING: the process is currently sleeping or waiting to be waked up by signals send to it.
+ZOMBIE: the process is killed or exit but haven't release the slot in process table.
+
+
+4：  root/defs.h: Line 123 void     swtch(struct context**, struct context*); Then it is implemented by root/swtch.S, function swtch;
+
+5: The function recieve the process, a new and old one, that is to be switched. It first save all the old registers by pushl, and then
+change the pointer from the old process address(%eax) to new process address(%esp) by movl. After that, it popl all the registers in
+new process, the eip is not popped because that is the return address.
+
+6: The function that calls swtch is the function scheduler in proc.c Line 266. In this function. it scans all the processes and find p that is RUNNABLE
+It calls swtch to save the current context as old and run the new process by swtch function. Then it restore the process p.
+
+The other function that calls it is in sched in proc.c Line 301. This shced is called by yield, sleep, and exit and thus it is called when a process
+is going to terminate such that it switch back from previous scheduler call of swtch to proc--> context.
+
+Thus shced and shceduler should work as a cycle for manipulating swtch statement that switch processes and saving and restoring all registers and addresses.
+
+Process startup:
+
+1: The init.c, Line 24, fork() tht forks the first call frame for our exec("sh",argv). 
+
+2: The argv is pushed in initcode.S, Line 10, function start, and is initalized in Line 28, argv.
+
+3:The proc.c, Line 35, function allocproc and the modify of the process table entry is in Line 50 for current process.
+
+SYSTEM CALLS:
+The call of open() will first movl 15(SYS_open) to eax which is the system call number that stores into the register and set 64(T_SYSCALL) to syscall
+Then the process captures that trap number which is 64 representing the syscall, then it execute the syscall function in syscall.c.
+In this function, the syscall.c looks for the number in eax that is stored before and find corresponding number in syscalls[] in Line 102 of syscalls.c
+For open it is 15 and it calls the sys_open in Line 133 of syscall.c.
+
+
+FILES AND FILE DESCRIPTORS:
+
+1: The file descriptor is allocated in sysfile.c, function sys_open, Line 315;
+The algorithm used to choose is the function fdalloc, Line 45 where we find the first unused entry in ofile;
+
+2: The array is ofile[] and the type of each entry is a struct file that is defined in file.h, Line 13.
+
+3:The field is struct inode that contians the ref, Reference count,  that holds the offset into the file in Line 7 of file.h
+
+4: The Line 297 in create function where we initialize the offset to 0
+
+5:It can also be intialized to FD_NONE or FD_PIPE 
+
+6:
+  12 struct pipe {
+  13   struct spinlock lock; //To represent a spinlock in which the uint locked = 0 for not occupied(initial), 1 for occupied.
+  14   char data[PIPESIZE]; //an array of 512 characters holding data.
+  15   uint nread;     // number of bytes read
+  16   uint nwrite;    // number of bytes written
+  17   int readopen;   // read fd is still open
+  18   int writeopen;  // write fd is still open
+
+7:
+argfd(0,0,&f):
+This obtains the nth argument of file descripter , store in f, using argint(n,fd) and return the descriptor and corresponding struct file.
+
+fdalloc(f):
+This allocates a new file descriptor for duplicate by finding for open slots in ofile and returns the int fd. If there aren't any slot available, it will return -1. 
+
+If both function returns 0, which means success, filedup(f) is called to increase ref count for f, which means create a new reference.

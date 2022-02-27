@@ -1,0 +1,7 @@
+ABA Problem:
+  See: https://en.wikipedia.org/wiki/ABA_problem
+   or: https://course.ccs.neu.edu/cs7600/parent/thread-synch/aba-problem.pdf
+
+A thread "A" intends to pop item~X in step~(a); a concurrent, second thread ("B")
+``steals'' item~Y from the stack in step~(b); this causes the original
+thread ("A") to do the wrong thing in step~(c).

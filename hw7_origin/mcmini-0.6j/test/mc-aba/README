@@ -1,0 +1,82 @@
+SEE:  abs-problem.pdf (or aba-problem.txt) in this directory for a review
+     of the ABA problem.
+
+mc-aba-0.c:  Simple implementation of stack with push/pop
+             This multi-threaded implementation has bugs.
+
+mc-aba-1.c:  The implementation is instrumented with an 'is_on_stack'
+             field for the 'node_t'.  In addition, this version added
+             'mc_sched_yield()' before each access to a globally shared
+             variable (usually 'stack').  This forces the maximum number
+             of semantically distinct context switches (potentially
+             showing different results), thereby exposing bugs.
+             The bug is shown when Threads A and B each execute 'pop; push;'.
+             Each of 'push' and 'pop' allows for two context switches.
+             '../../mcmini --verbose mc-aba-1' yields a trace exposing a bug:
+                0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 1, 0, 2, 2, 0,
+             (After thread 0 (main), Thread A does a pop() and half of a
+              push().  Thread B then does a pop().  Thread A then completes
+              the second half of the push(), and Thread B does a push().
+              Then main() finishes executing and does an assert that
+              discovers a stack length of at least 100, presumably
+              indicating a circularity in the linked list of the stack.)
+
+mc-aba-2.c:  This implementation adds more print statements, as compared
+             to mc-aba-1.c.
+             The trace now illustrates the same behavior as described for
+             mc-aba-1.c, while this time showing print statements embedded
+             in the code.
+               ../../mcmini --initial-trace \
+                 '0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 1, 0, 2, 2, 0,' ./mc-aba-2
+
+mc-aba-3.c:  This implementation adds a compare_and_swap instruction to
+             fix the bug exposed in mc-aba-1.c and mc-aba-2.c.  This still
+             defines Threads A and B to each execute 'pop; push;'.
+             A successful execution for this case is shown as follows:
+               ../../mcmini --verbose ./mc-aba3
+
+mc-aba-4.c:  This implementation changes Threads A and B to execute
+             'pop;' and 'pop; pop; push;', respectively.  We are now modeling
+             a different sequence of push/pop instructions.  Here, we see the
+             combination of pop and push that exposes the ABA bug,
+             when running:
+               ../../mcmini --verbose ./mc-aba4
+             The trace exhibiting the bug is:
+               0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 1,
+             and you can run it directly with:
+               ../../mcmini --initial-trace \
+                 '0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 1,' ./mc-aba-4
+
+mc-aba-5.c:  This implementation changes Threads A and B to each now execute
+             three iterations of push/pop.  Notice that we are now changing the
+             'model' of how we execute.  In particular, we no longer select a
+             fixed input sequence of push/pop instructions.  Instead, we now
+             use mc_choose() to choose either push() or pop() at each iteration
+             in each thread.  This is our new choice for the 'model'
+             in model-check.
+             This version of the code will search all combinations of
+             push and pop for each thread in order to discover the
+             combination that exposes the ABA bug.  Run it as:
+               ../../mcmini --verbose ./mc-aba5
+             One trace exhibiting the bug corresponding to aba-problem.pdf is:
+               0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2:choose(1), 2, 2, 2:choose(0), 2:choose(0), 2, 2, 1,
+             and you can run it directly with:
+               ../../mcmini --verbose --initial-trace '0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2:choose(1), 2, 2, 2:choose(0), 2:choose(0), 2, 2, 1,' mc-aba-5
+             In fast, this version will discover an earlier bug in
+             lexicographic (alphabetic) order:
+               0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1:choose(1), 1, 1, 1:choose(0), 1:choose(0), 1, 1, 2,
+             You can explore in GDB the bug that was discovered by doing:
+               ../../mcmini --gdb --initial-trace '0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2:choose(1), 2, 2, 2:choose(0), 2:choose(0), 2, 2, 1,' mc-aba-5
+
+===
+A previous case study in DMTCP:  An ABA bug was found after 2 years.
+Found using:
+  git log -S__sync_bool_compare_and_swap
+  git checkout XXX
+  grep __sync_bool_compare_and_swap jalib/jalloc.cpp
+
+I chose:
+  git checkout e7bb7a5d25e53fd82872c1a4b1b7861d9127b317
+
+When __sync_bool_compare_and_swap
+was first introduced into DMTCP, it had an ABA bug.

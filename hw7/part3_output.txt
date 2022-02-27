@@ -1,0 +1,6 @@
+Philosopher 0 just ate.
+Philosopher 2 just ate.
+Philosopher 1 just ate.
+Philosopher 0 just ate.
+Philosopher 2 just ate.
+Philosopher 1 just ate.

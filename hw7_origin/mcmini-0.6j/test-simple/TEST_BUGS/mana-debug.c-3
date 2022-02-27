@@ -1,0 +1,246 @@
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h> // for PATH_MAX
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#ifdef STANDALONE
+# define SHARED_DIR "/tmp"
+#else
+# define SHARED_DIR "/cscratch"
+#endif
+#define INIT_MAX_RANK 10
+#define DELIMITER " - "
+
+int is_controller_proc = 0; // Used only for debugging
+int max_rank_is_at_least = INIT_MAX_RANK;
+
+// For /cscratch/USER/MANA_DEBUG, etc.
+char outfile[PATH_MAX];
+char outfile_old[PATH_MAX];
+char lockfile[PATH_MAX];
+
+
+int init_all_files(const char *lockfile);
+void create_outfile(void);
+void write_rank_and_uniquepid(const char *outfile);
+int guess_max_rank(int max_rank_is_at_least);
+void wait_for_all_ranks(int lockfile_fd);
+
+int fcntl_lock(fd, cmd, type) {
+  struct flock lock;
+  lock.l_type = type;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0;
+  lock.l_len = 0;
+  lock.l_pid = 0;
+  while (1) {
+    int rc = fcntl(fd, cmd, &lock);
+    if (rc == -1 && errno == EINTR) {
+      // If signal interrupt on F_SETLK or F_SETLKW, then continue.
+      continue;
+    } else if (rc == -1 && cmd == F_SETLK) {
+      assert(errno == EAGAIN || errno == EACCES); // conflict w/ existing lock
+      return rc; // return -1 for non-blocking request
+    } else {
+      if (rc == -1) {perror(__FILE__":fcntl_lock");}
+      if (rc == -1 && errno == EBADF) {
+        fprintf(stderr,
+                " ** Was fd for lockfile opened with read+write permission?\n");
+      }
+      assert(rc == 0);
+      if (cmd == F_GETLK) {
+        return lock.l_pid;
+      } else {
+        return rc; // The lock request succeeded.
+      }
+    }
+  }
+}
+// NOTE:  fd must be opened with read+write permission.
+#define EXCLUSIVE_LOCK(fd) fcntl_lock(fd, F_SETLKW, F_WRLCK)
+#define EXCLUSIVE_LOCK_NONBLOCKING(fd) fcntl_lock(fd, F_SETLK, F_WRLCK)
+#define SHARED_LOCK(fd) fcntl_lock(fd, F_SETLKW, F_RDLCK)
+#define UNLOCK(fd) fcntl_lock(fd, F_SETLKW, F_UNLCK)
+// For debugging
+#define GET_SHARED_LOCK(fd) fcntl_lock(fd, F_GETLK, F_RDLCK)
+#define GET_EXCLUSIVE_LOCK(fd) fcntl_lock(fd, F_GETLK, F_WRLCK)
+
+void create_and_write_info(void) {
+static int first_time = 1;
+if (!first_time) while (1);
+if (first_time) first_time = 0;
+  strncpy(outfile, SHARED_DIR "/", sizeof(SHARED_DIR)+1);
+#ifdef STANDALONE
+  if (getenv("TMPDIR")) { // If TMPDIR exists, '/tmp' might not be valid.
+    strcpy(outfile, getenv("TMPDIR"));
+    strcat(outfile, "/");
+  }
+#endif
+  assert(getenv("USER") != NULL);
+  assert( access(outfile, R_OK|W_OK|X_OK) != -1 );
+  strcat(outfile, getenv("USER"));
+  if (access(outfile, R_OK|W_OK|X_OK) == -1) {
+    assert(mkdir(outfile, S_IRWXU) != -1);
+  }
+
+  strcpy(outfile_old, outfile);
+  strcpy(lockfile, outfile);
+  
+  strcat(outfile, "/MANA_DEBUG.out");
+  strcat(outfile_old, "/MANA_DEBUG.out.old");
+  strcat(lockfile, "/MANA_DEBUG.lockfile");
+  
+  // Create lockfile and outfile; if we created lockfile, then return fd to it.
+  int lockfile_fd = init_all_files(lockfile);
+  write_rank_and_uniquepid(outfile);
+  // If we created lockfile, then wait until everyone wrote to outfile.
+  if (lockfile_fd >= 0) {
+    wait_for_all_ranks(lockfile_fd);
+    assert( close(lockfile_fd) == 0 );
+  }
+}
+
+int init_all_files(const char *lockfile) {
+  int fd = open(lockfile, O_RDWR | O_CREAT, S_IRWXU);
+  assert(fd != -1);
+  int rc = EXCLUSIVE_LOCK_NONBLOCKING(fd);
+  if (rc == 0) { // if we're holding EXCLUSIVE_LOCK
+    create_outfile();
+    rc |= SHARED_LOCK(fd); // Change to shared lock; everyone can continue.
+    assert(rc == 0);
+  } else if (rc == -1) { // otherwise someone else holds EXCLUSIVE_LOCK
+    rc = SHARED_LOCK(fd); // Wait on SHARED_LOCK until outfile is created.
+assert(rc == 0);
+    rc |= UNLOCK(fd);
+    rc |= close(fd);
+    fd = -1;
+    assert(rc == 0);
+  }
+  return fd;
+}
+
+void create_outfile(void) {
+  is_controller_proc = 1;
+  int rc = 0;
+  if (access(outfile_old, F_OK) != -1) {
+    rc |= unlink(outfile_old);
+  }
+  if (access(outfile, F_OK) != -1) {
+    rc |= rename(outfile, outfile_old);
+  }
+  int fd = creat(outfile, S_IRUSR | S_IWUSR);
+  assert(rc == 0 && fd != -1);
+}
+
+void write_rank_and_uniquepid(const char *outfile) {
+#ifdef STANDALONE
+  const char *uniquepid = "000-000-000";
+#else
+  const char *uniquepid = dmtcp_get_uniquepid_str();
+#endif
+  const char* rank = getenv("MPI_RANK");
+  assert(rank != NULL);
+  
+  int fd = open(outfile, O_RDWR);
+  EXCLUSIVE_LOCK(fd);
+  FILE *stream = fdopen(fd, "a");
+  const char * format = "%s" DELIMITER "%s\n";
+  int rc = fprintf(stream, format, rank, uniquepid);
+  assert(rc > 0); // More than zero characters were printed.
+  UNLOCK(fd);
+  fclose(stream); // This also closes the associated fd.
+}
+
+int guess_max_rank(int max_rank_is_at_least) {
+  char ranks[100000] = {0};
+  int max_rank_seen = -1;
+
+  FILE *stream = fopen(outfile, "r");
+  while (1) {
+    int rank;
+    // Read rank and throw away the rest of the line.
+    int rc = fscanf(stream, "%d" DELIMITER "%*s\n", &rank);
+    if (rc == EOF) {
+      break;
+    } else {
+      assert(rc == 1); // exactly one item matched by fscanf
+    }
+    ranks[rank] = 1;
+    if (rank > max_rank_seen) {
+      max_rank_seen = rank;
+    }
+  }
+  fclose(stream);
+  int i;
+  for (i = 0; i <= max_rank_seen; i++) {
+    if (ranks[i] == 0) {
+      return max_rank_seen;
+    }
+  }
+  return 0; // ranks are in order and complete
+}
+
+// This will set max_rank_is_at_least to best guess for max rank.
+void wait_for_all_ranks(int lockfile_fd) {
+  int max = max_rank_is_at_least;
+  int iters = 0;
+  while (max > 0) {
+    sleep(1);
+    int outfile_fd = open(outfile, O_RDWR);
+    SHARED_LOCK(outfile_fd);
+    // This returns 0 if and only if all ranks have written their information.
+    max = guess_max_rank(max_rank_is_at_least);
+    if (max > max_rank_is_at_least) {
+      max_rank_is_at_least = max;
+      iters = 0;
+    } else if (max == 0) {
+      static int first_time = 1;
+      if (first_time) {
+        first_time = 0;
+        sleep(3);  // The first time we think max is known, wait 3 more seconds.
+      } else {
+        break; // Okay, now done; consecutive ranks have registered.
+      }
+    } else if (max < max_rank_is_at_least) {
+      if (iters++ >= 100) {
+        // 100 iterations, and no rank is max_rank_is_at_least.
+        // Probably max_rank_is_at_least was initialized too high.
+        max_rank_is_at_least = max;
+      }
+    }
+    // else 0 < max < max_rank_is_at_least; go around again, wait for more ranks
+    // or else max == 0; close everything and exit the while loop
+    UNLOCK(outfile_fd);
+  }
+}
+
+#ifdef STANDALONE
+int main() {
+  srand((unsigned int)time(NULL)); // choose random seed
+  int i;
+  for (i = 0; i < 20; i++) {
+    if (fork() == 0) { // if child
+      char myrank[20];
+      snprintf(myrank, sizeof(myrank), "%d", i);
+      setenv("MPI_RANK", myrank, 1);
+      sleep(rand() % 6); // sleep up to 5 seconds
+      create_and_write_info();
+      if (is_controller_proc) {
+        printf("controller_proc: %d\n", getpid());
+      }
+    }
+  }
+  for (i = 0; i < 20; i++) {
+    wait(NULL);
+  }
+  return 0;
+}
+#endif

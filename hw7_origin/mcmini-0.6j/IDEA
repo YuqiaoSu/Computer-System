@@ -1,0 +1,20 @@
+Deep verification:
+  libpthread probably doesn't have any global constructors.
+
+  So, we can simply create a dummy libpthread that looks at an array
+  of addresses for pthread functions.  On restart, we modify the dummy
+  libpthread library to go to our own libpthread.
+
+#===================================
+CREATE mcminicc: -Imypthread  # contains pthread.h
+  We include: 'int val = mc_choose(int max)'
+
+Initially use an LD_PRELOAD library, with a global constructor to take control:
+* parent (mc.c) forks child, and calls initialize_pthread_simulator()
+    to set mc_trace[] (thread schedule) for child, before returning and allowing
+    end user 'main()' to take control.
+* Our libmc.so:pthread-simulator.c defines pthread_mutex_lock(), etc.
+
+* Could also use macros for pthread_mutex_lock to print __LINE__, or
+  else look up the stack one level, and use GDB tricks.;
+  Could have second version that uses macro with __LINE__

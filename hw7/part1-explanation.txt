@@ -1,0 +1,6 @@
+Because Mcmini stops at the first pthread call which is the first lock of fork in each thread. Thus in the case of 1,2,3
+The first philosopher tooks the fork 0 and stop
+The second philosopher tooks the fork 1 and stop
+The third philosopher tooks the fork 2 and stop
+Then no matter who is going to eat the next, he can't find any fork because no one has finished eating and thus we have
+NEW TRACE: 1,2,3 1/2/3 ends up as EXIT_blocked_at_mutex in MCmini.

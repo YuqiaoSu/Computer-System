@@ -1,0 +1,37 @@
+set break pending on
+break model_check
+set follow-fork-mode parent
+run
+break 432
+cond 2 iter == 527
+#   0, 0, 0, 0, 0, 0, 1, 1, 1:choose(1), 1, 1, 2, 3,
+#   (gdb) p *mc_trace@20
+#   $1 = {0, 0, 0, 0, 0, 0, 1, 1, 1, 65, 1, 1, 2, 3, -1, -99, 0, 0, 0, 0} 
+# cond 2 iter == 3744
+# cond 2 iter == 3724
+# cond 2 iter == 174
+cont
+set follow-fork-mode child
+# set detach-on-fork no
+break main
+
+# NEW TRACE: 0, 0, 0, 0, 0, 0, 2, 2, 1, 1, 1:choose(0), 2:choose(1), 1, 1, 2, 2, 2:choose(1),
+#   *** STARTING NEW JOB ***
+#   push(Z)[TRYING]: TOP_OF_STACK->NULL
+#   push(Z)[DONE]: TOP_OF_STACK->Z->NULL
+#   push(Y)[TRYING]: TOP_OF_STACK->Z->NULL
+#   push(Y)[DONE]: TOP_OF_STACK->Y->Z->NULL
+#   push(X)[TRYING]: TOP_OF_STACK->Y->Z->NULL
+#   push(X)[DONE]: TOP_OF_STACK->X->Y->Z->NULL
+# TOP_OF_STACK->X->Y->Z->NULL
+#   A(pop):   B(pop):   pop()=>X: TOP_OF_STACK->Y->Z->NULL
+#   pop()=>Y: TOP_OF_STACK->Z->NULL
+#   A(push):   B(pop):   push(Y)[TRYING]: TOP_OF_STACK->Z->NULL
+#   push(Y)[DONE]: TOP_OF_STACK->Y->Z->NULL
+#   A(pop):   pop()=>Y: TOP_OF_STACK->Z->NULL
+#   B(pop):   TRACE RESULT: iter: 52231, childpid: 15510, exit status: EXIT_live* mcmini: maximum frontier length reached: 100000
+# mcmini:mc.c:165: copy_trace_and_extend: Assertion `dest < MAX_FRONTIER_LEN' failed.
+
+# NEW TRACE: 0, 0, 0, 0, 0, 0, 2, 1, 1, 1:choose(1), 1, 1, 1:choose(0), 2, 2, 1, 2, 1, 1, 1, 2,
+#   TRACE RESULT: iter: 289626, childpid: 6107, exit status: EXIT_live
+# mcmini: maximum frontier length reached: 500000 

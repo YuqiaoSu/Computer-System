@@ -1,0 +1,13 @@
+Without --verbose
+5.939u 870.562s 5:49.14 251.0%  0+0k 0+0io 0pf+0w  
+
+WITH NO PRINTING BY mc-aba-5 either:
+4.518u 808.455s 5:43.30 236.8%  0+0k 0+0io 0pf+0w  
+
+Possible Performance hacks:
+  https://gist.github.com/nicowilliams/a8a07b0fc75df05f684c23c18d7db234
+    nicowilliams/fork-is-evil-vfork-is-good-afork-would-be-better.md
+
+  https://www.bitsnbites.eu/benchmarking-os-primitives/
+    Marcus Geelnard
+    Benchmarking OS primitives

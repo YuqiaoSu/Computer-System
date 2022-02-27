@@ -1,0 +1,132 @@
+If 2:choose() in --initial-trace and it's not mc_choose(), can we
+catch that and report that, and vice versa?  Suppose we go to a thread
+blocked on a mutex and ask it to advance?  Can we catch those error?
+
+Change breadth-first search, due to its large space requirements.
+We can offer breadth-first search (simple), and modified breadth-first
+  (see below), and iterative depending depth-first.
+If breadth-first or modified breadth-first fails, suggest the algo below,
+or else to increase the MAX_FRONTIER_LEN.
+Offer option of iterative deepening with the warning that it's more
+space-efficient, but slower.
+[ NEED compatibility with --parallel ]
+[ PREFER incrementing depth one level at a time so as not to do extra
+    work if the bug is at the next level.  But then with a branching factor
+    of two, we would repeat a lot of old work if using depth-first.
+    So, it's essential to continue using breadth-first. ]
+[ MAYBE COMPACT FRONTIER DATA STRUCTURE THAT CAN BE DYNAMICALLY
+    RECREATED ON THE FLY?   CAN WE SAVE traces at earlier level, and
+    reconstruct remaining part of the trace?   (2-bit trick?)
+    MAYBE save trace at earlier level, plus EXIT_val, and then
+    at each succeeding level, save EXIT_val.  Then when we re-do
+    the work, we don't actually run the target.  Instead, we just
+    look at the result of that target and generate the frontier_extend stuff
+    again. Maybe have a frontier of returned values, and then reconstruct
+    the outer frontier. So, we can reconstruct the input traces for
+    the outer frontier a piece at a time this way. This should be a
+    separate C file]
+[ At the same time, should we offer more than 4 threads. ]
+
+mc_sched_yield:  replace sched_yield with mc_sched_yield (started in mcmini.h)
+                replace pthread_simulator.c:mc_sched with mc_sched_yield ??
+                Or maybe define pthread_simulator.c:mc_sched_yield to mc_sched()
+
+For semaphores, we track the count ourselves.  For sem_post(), we should
+just schedule it to continue but not expand, since stopping at sem_post()
+doesn't change the outcome.  Call it EXIT_cotinue>
+It posts and the receiver in sem_wait() affects the outcome based on
+the length of the delay in responding.  And add EXIT_blocked_at_semaphore,
+or join this with EXIT_blocked_at_mutex.
+Since any semaphore can be woken up, if a trace sees a thread inside
+sem_wait() and if count > 0, then we allow the thread to wake up and continue.
+[ We should also check for 'while (rc == -1 && errno == EINTR) { sem_wait(); }'
+
+Should add --print-trace in which we print "mutex_lock", etc., along
+with the mutex address.  We could later provide a symbolic name,
+mutexA, mutexB, etc., for readability.
+AND '--gdb --verbose' might, in combination, mean to do --print-trace ??
+
+BUG:
+make check-verbose
+OR:
+sh -c 'mcmini mc-mutex-deadlock' is not using mc_choose.
+pthread-simulator.c:initialize_env() is not being called.  Why?
+  It is called under bash or sh.  Just not under tcsh.
+
+Should handle dynamic number of threads, not just 4, w/ calls to pthread_create.
+(See:  mc.c:expand_trace_frontier(), near end of fnc, where it always
+       expands to exactly four traces at the next level.)
+Similarly, we should implement pthread_join() the right way.
+
+In order for a child to send more return values, we could use:
+  mq_send and mq_recv (w msg as (trace_frontier_index, exit status)
+  ]mq_receive is blocking by default, but a signal handler interrupts it]
+and leave SIGCHLD handler as:
+  [ No signal sent, no zombie created. ]
+struct sigaction {
+    void     (*sa_handler)(int);
+    void     (*sa_sigaction)(int, siginfo_t *, void *);
+    sigset_t sa_mask;
+    int      sa_flags;
+    void     (*sa_restorer)(void);
+};
+  sa_handler = SIG_DFL and sa_sigaction = SA_NOCLDWAIT and sa_flags = SIGCHLD
+] or we could use sigqueue with SA_SIGINFO setting ai_ptr in siginfo_t.
+
+But if one calls 'mc_chose(3); mc_chose(3)', then one gets 9 choices.
+And one can have up to 64 choices in a single call.
+
+Could add 'mcmini --max-threads';  But we added --parallel.  Enough for now.
+
+Integrate mcmini options into mc.c
+  mc_frontier:  Choose MAX_TRACE_LEN to 100, and MAX_FRONTIER_LEN to 1,000,000 ?
+                 BUT then 400 MB needed.
+
+expands with only 0 or 1 at the end of the trace.
+  child can return exit status of: CHOOSE_MASK | num_choices
+  Can it return exit status of: NUM_THREADS | num_threads >> 3
+  [ 8 bits must be split among exit_status, num_choices, num_threads:
+      3 bits, bit for CHOOSE_MASK, bit for NUM_THREADS, 3 bit value;
+      but if it's a CHOOSE_MASK, then it could also return NUM_THREADS;
+      Can we use number of threads from the trace value before mc_choose()?
+      BETTER:
+      Or if we return mc_choose(), then exit status is not used; re-use it
+      for number of threads.
+      BUT:  For now, just recommend that the user
+            use 'mc_choose(8); mc_choose(8);'
+  ]
+
+If we want to support many threads, then we would develop a scheme with:
+  EXIT_threads_changed
+and it would report the number of threads in the exit status,
+and mc.c would then immediately re-run it in normal mode, and then expand
+according tot he number of threads.
+This is tricky.  Suppose a child thread does this.  But then its parent
+  thread goes on and creates an extra thread.  Then the extra thread
+  could also preempt the original thread.
+
+Progress condition:
+  Add weak functions:  make_request(), request_is_satisfied()
+
+Interpose on _exit(), in case of return from 'main()' or call by
+  application to 'exit()'.
+ADD mc_choose();
+  Make it a weak function that returns -1 if the library is not present.
+  Then:  mcmini --verbose --prefix=0,1,choose(2),1,-1 \
+               --depth=?? --frontier-length=?? ./a.out ...
+    mcmini passes in its args through environment variables: MCMINI_???.
+?? For deadlock: report line numbers of all threads
+  OPTIONS:  --mc-verbose ; --mc-trace-prefix=0,0,1,1
+            (Do we capture that with /proc/cmdline early?  If so, what about
+             rewriting command line for argv (easy) and argc?
+             Or maybe set environment variables and then xecvp?)
+
+thread_index should be 1-based (not 0-based)?
+
+mc_trace_index -- need to protect it with a real mutex?
+same for others globals?
+  mc_trace_index = 0;
+  mc_thread_index_last = 0;
+  mc_cur_thread_index = 0;
+
+Need a comment explaining that the 4 globals will be shared properly.

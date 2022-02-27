@@ -1,0 +1,181 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2580
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sl360\partightenfactor0
+
+\f0\fs24 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Test Run 1:\
+Enter total bytes: 128\
+Enter block bytes:8\
+Please modify global array inputis direct-mapped?(1 for yes, 0 for no)1\
+\
+0:MISS  (Tag/Set#/Offset: 0/0/0)\
+16:MISS  (Tag/Set#/Offset: 0/2/0)\
+32:MISS  (Tag/Set#/Offset: 0/4/0)\
+48:MISS  (Tag/Set#/Offset: 0/6/0)\
+64:MISS  (Tag/Set#/Offset: 0/8/0)\
+80:MISS  (Tag/Set#/Offset: 0/10/0)\
+96:MISS  (Tag/Set#/Offset: 0/12/0)\
+112:MISS  (Tag/Set#/Offset: 0/14/0)\
+128:MISS  (Tag/Set#/Offset: 1/0/0)\
+144:MISS  (Tag/Set#/Offset: 1/2/0)\
+160:MISS  (Tag/Set#/Offset: 1/4/0)\
+176:MISS  (Tag/Set#/Offset: 1/6/0)\
+192:MISS  (Tag/Set#/Offset: 1/8/0)\
+208:MISS  (Tag/Set#/Offset: 1/10/0)\
+224:MISS  (Tag/Set#/Offset: 1/12/0)\
+240:MISS  (Tag/Set#/Offset: 1/14/0)\
+256:MISS  (Tag/Set#/Offset: 2/0/0)\
+272:MISS  (Tag/Set#/Offset: 2/2/0)\
+288:MISS  (Tag/Set#/Offset: 2/4/0)\
+304:MISS  (Tag/Set#/Offset: 2/6/0)\
+320:MISS  (Tag/Set#/Offset: 2/8/0)\
+0:MISS  (Tag/Set#/Offset: 0/0/0)\
+16:MISS  (Tag/Set#/Offset: 0/2/0)\
+32:MISS  (Tag/Set#/Offset: 0/4/0)\
+48:MISS  (Tag/Set#/Offset: 0/6/0)\
+64:MISS  (Tag/Set#/Offset: 0/8/0)\
+284:MISS  (Tag/Set#/Offset: 2/3/4)\
+12:MISS  (Tag/Set#/Offset: 0/1/4)\
+164:MISS  (Tag/Set#/Offset: 1/4/4)\
+324:MISS  (Tag/Set#/Offset: 2/8/4)\
+156:MISS  (Tag/Set#/Offset: 1/3/4)\
+152:HIT  (Tag/Set#/Offset: 1/3/0)\
+284:MISS  (Tag/Set#/Offset: 2/3/4)\
+60:MISS  (Tag/Set#/Offset: 0/7/4)\
+156:MISS  (Tag/Set#/Offset: 1/3/4)\
+44:MISS  (Tag/Set#/Offset: 0/5/4)\
+204:MISS  (Tag/Set#/Offset: 1/9/4)\
+228:HIT  (Tag/Set#/Offset: 1/12/4)\
+164:HIT  (Tag/Set#/Offset: 1/4/4)\
+Cache contents (for each cache row index):\
+0: Valid: True; Tag: 0 (Set #:  0)\
+1: Valid: True; Tag: 0 (Set #:  1)\
+2: Valid: True; Tag: 0 (Set #:  2)\
+3: Valid: True; Tag: 1 (Set #:  3)\
+4: Valid: True; Tag: 1 (Set #:  4)\
+5: Valid: True; Tag: 0 (Set #:  5)\
+6: Valid: True; Tag: 0 (Set #:  6)\
+7: Valid: True; Tag: 0 (Set #:  7)\
+8: Valid: True; Tag: 2 (Set #:  8)\
+9: Valid: True; Tag: 1 (Set #:  9)\
+10: Valid: True; Tag: 1 (Set #:  10)\
+11: Valid: false; Tag: - (Set #:  11)\
+12: Valid: True; Tag: 1 (Set #:  12)\
+13: Valid: false; Tag: - (Set #:  13)\
+14: Valid: True; Tag: 1 (Set #:  14)\
+15: Valid: false; Tag: - (Set #:  15)\
+\
+\
+Test Run 2:\
+\
+Enter total bytes: 128\
+Enter block bytes:16\
+Please modify global array inputis direct-mapped?(1 for yes, 0 for no)1\
+\
+0:MISS  (Tag/Set#/Offset: 0/0/0)\
+16:MISS  (Tag/Set#/Offset: 0/1/0)\
+32:MISS  (Tag/Set#/Offset: 0/2/0)\
+48:MISS  (Tag/Set#/Offset: 0/3/0)\
+64:MISS  (Tag/Set#/Offset: 0/4/0)\
+80:MISS  (Tag/Set#/Offset: 0/5/0)\
+96:MISS  (Tag/Set#/Offset: 0/6/0)\
+112:MISS  (Tag/Set#/Offset: 0/7/0)\
+128:MISS  (Tag/Set#/Offset: 1/0/0)\
+144:MISS  (Tag/Set#/Offset: 1/1/0)\
+160:MISS  (Tag/Set#/Offset: 1/2/0)\
+176:MISS  (Tag/Set#/Offset: 1/3/0)\
+192:MISS  (Tag/Set#/Offset: 1/4/0)\
+208:MISS  (Tag/Set#/Offset: 1/5/0)\
+224:MISS  (Tag/Set#/Offset: 1/6/0)\
+240:MISS  (Tag/Set#/Offset: 1/7/0)\
+256:MISS  (Tag/Set#/Offset: 2/0/0)\
+272:MISS  (Tag/Set#/Offset: 2/1/0)\
+288:MISS  (Tag/Set#/Offset: 2/2/0)\
+304:MISS  (Tag/Set#/Offset: 2/3/0)\
+320:MISS  (Tag/Set#/Offset: 2/4/0)\
+0:MISS  (Tag/Set#/Offset: 0/0/0)\
+16:MISS  (Tag/Set#/Offset: 0/1/0)\
+32:MISS  (Tag/Set#/Offset: 0/2/0)\
+48:MISS  (Tag/Set#/Offset: 0/3/0)\
+64:MISS  (Tag/Set#/Offset: 0/4/0)\
+284:MISS  (Tag/Set#/Offset: 2/1/12)\
+12:HIT  (Tag/Set#/Offset: 0/0/12)\
+164:MISS  (Tag/Set#/Offset: 1/2/4)\
+324:MISS  (Tag/Set#/Offset: 2/4/4)\
+156:MISS  (Tag/Set#/Offset: 1/1/12)\
+152:HIT  (Tag/Set#/Offset: 1/1/8)\
+284:MISS  (Tag/Set#/Offset: 2/1/12)\
+60:HIT  (Tag/Set#/Offset: 0/3/12)\
+156:MISS  (Tag/Set#/Offset: 1/1/12)\
+44:MISS  (Tag/Set#/Offset: 0/2/12)\
+204:MISS  (Tag/Set#/Offset: 1/4/12)\
+228:HIT  (Tag/Set#/Offset: 1/6/4)\
+164:MISS  (Tag/Set#/Offset: 1/2/4)\
+Cache contents (for each cache row index):\
+0: Valid: True; Tag: 0 (Set #:  0)\
+1: Valid: True; Tag: 1 (Set #:  1)\
+2: Valid: True; Tag: 1 (Set #:  2)\
+3: Valid: True; Tag: 0 (Set #:  3)\
+4: Valid: True; Tag: 1 (Set #:  4)\
+5: Valid: True; Tag: 1 (Set #:  5)\
+6: Valid: True; Tag: 1 (Set #:  6)\
+7: Valid: True; Tag: 1 (Set #:  7)\
+\
+Test Run 3:\
+Enter total bytes: 64\
+Enter block bytes:8\
+Please modify global array inputis direct-mapped?(1 for yes, 0 for no)0\
+is fully-associative?(1 for yes, 0 for no)1\
+\
+0:MISS  (Tag/Set#/Offset: 0/0/0)\
+16:MISS  (Tag/Set#/Offset: 2/0/0)\
+32:MISS  (Tag/Set#/Offset: 4/0/0)\
+48:MISS  (Tag/Set#/Offset: 6/0/0)\
+64:MISS  (Tag/Set#/Offset: 8/0/0)\
+80:MISS  (Tag/Set#/Offset: 10/0/0)\
+96:MISS  (Tag/Set#/Offset: 12/0/0)\
+112:MISS  (Tag/Set#/Offset: 14/0/0)\
+128:MISS  (Tag/Set#/Offset: 16/0/0)\
+144:MISS  (Tag/Set#/Offset: 18/0/0)\
+160:MISS  (Tag/Set#/Offset: 20/0/0)\
+176:MISS  (Tag/Set#/Offset: 22/0/0)\
+192:MISS  (Tag/Set#/Offset: 24/0/0)\
+208:MISS  (Tag/Set#/Offset: 26/0/0)\
+224:MISS  (Tag/Set#/Offset: 28/0/0)\
+240:MISS  (Tag/Set#/Offset: 30/0/0)\
+256:MISS  (Tag/Set#/Offset: 32/0/0)\
+272:MISS  (Tag/Set#/Offset: 34/0/0)\
+288:MISS  (Tag/Set#/Offset: 36/0/0)\
+304:MISS  (Tag/Set#/Offset: 38/0/0)\
+320:MISS  (Tag/Set#/Offset: 40/0/0)\
+0:MISS  (Tag/Set#/Offset: 0/0/0)\
+16:MISS  (Tag/Set#/Offset: 2/0/0)\
+32:MISS  (Tag/Set#/Offset: 4/0/0)\
+48:MISS  (Tag/Set#/Offset: 6/0/0)\
+64:MISS  (Tag/Set#/Offset: 8/0/0)\
+284:MISS  (Tag/Set#/Offset: 35/0/4)\
+12:MISS  (Tag/Set#/Offset: 1/0/4)\
+164:MISS  (Tag/Set#/Offset: 20/0/4)\
+324:MISS  (Tag/Set#/Offset: 40/0/4)\
+156:MISS  (Tag/Set#/Offset: 19/0/4)\
+152:HIT  (Tag/Set#/Offset: 19/0/0)\
+284:HIT  (Tag/Set#/Offset: 35/0/4)\
+60:MISS  (Tag/Set#/Offset: 7/0/4)\
+156:HIT  (Tag/Set#/Offset: 19/0/4)\
+44:MISS  (Tag/Set#/Offset: 5/0/4)\
+204:MISS  (Tag/Set#/Offset: 25/0/4)\
+228:MISS  (Tag/Set#/Offset: 28/0/4)\
+164:HIT  (Tag/Set#/Offset: 20/0/4)\
+Cache contents (for each cache row index):\
+0: Valid: True; Tag: 5 - (Set #:  0)\
+1: Valid: True; Tag: 25 - (Set #:  0)\
+2: Valid: True; Tag: 28 - (Set #:  0)\
+3: Valid: True; Tag: 1 - (Set #:  0)\
+4: Valid: True; Tag: 20 - (Set #:  0)\
+5: Valid: True; Tag: 40 - (Set #:  0)\
+6: Valid: True; Tag: 19 - (Set #:  0)\
+7: Valid: True; Tag: 7 - (Set #:  0)}

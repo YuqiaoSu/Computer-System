@@ -1,0 +1,97 @@
+				Homework 8
+			Due:  Dec. 8 (last day of classes)
+
+First, read Chapter 30 (Condition Variables) from ostep.org.
+Then, review the diagram in condition-variables.pdf (in this directory),
+which illustrates how condition variables work.  Note that the diagram
+refers to acquiring and releasing resources, in addition to the basic
+idea of a condition variable.  The concept of resources provides a
+very general structure for organizing thread synchronization.
+Finally, study the code in condition-variable-example.c .
+
+MOTIVATION:  Readers and writers (or read and write access) are common
+             throughout computer science.  To take an example from
+             databases, a database query requires "read access" to
+             the database.  A database update requires "write access"
+             to the database.  This homework shows how to organize
+             many concurrent reader and writer threads.
+
+You have now seen three types of invariants:
+  mutex:  INVARIANT: at most one thread allowed in the critical section
+  semaphore:  INVARIANT:
+                If the semaphore is negative, this represents
+                  the number of threads waiting on the semaphore.
+                If the semaphore is positive, this represents
+                  the number of "free passes" available for the next
+                  few threads.
+                sem_wait() decrements the semaphore, and sem_post increments it.
+                The number of threads waiting is also adjusted to maintain
+                  the invariant when the semaphore value changes.
+  condition variables:  INVARIANT:
+               The invariant is whatever you want it to be!
+               In this homework, the invariant is that a thread can
+                 acquire and hold a resource only if the corresponding function
+                 (read_condition or write_condition) is true.
+			
+Your job in this homework is to modify read_condition() and write_condition()
+to satisfy the invariant condition that is specified in each of these
+parts.
+
+1.  The current code has a bug.  It deadlocks.  Therefore the invariants
+    (read_condition and/or write_condition) must have a bug.  Fix the
+    bug so that the deadlock disappears.  (You can choose any reasonable
+    invariant consistent with multiple active readers or one active writer
+    at a time.
+    HINT:  To debug this, do:
+      % make gdb
+      (gdb) run
+      (gdb) print num_readers
+      (gdb) print num_readers_waiting
+      (gdb) print ... # and so on for writers, etc.
+    Then change the read_condition and/or write_condition functions to
+    fix the bug that you are observing.
+
+2.  Modify read_condition() and write_condition() to make this
+      writer-preferred:  If any writer is waiting, then a reader
+      should call pthread_cond_wait() and let the writer acquire
+      the resource.
+
+3.  Modify read_condition() and write_condition() to make this
+      reader-preferred:  If any reader is waiting, then a writer
+      should call pthread_cond_wait() and let the reader acquire
+      the resource.
+
+4.  Modify read_condition() and write_condition() to make this
+      mostly-writer-preferred:  If all three readers are waiting,
+      then a writer should call pthread_cond_wait()
+      and let one of the readers acquire the resource.
+      If there are fewer than three readers waiting, then the
+      writer should be preferred.
+
+5.  Neither semaphores nor condition variables guarantee that the
+      the thread that has been waiting the longest will be woken up.
+      The operating system is allowed to choose any thread to wake up.
+      So, one thread could be starved if the operating system always
+      prefers to wake up other threads.
+        Let's fix this for the writers in the writer-preferred case
+      (in case 2, above).  The solution is motivated by when people
+      wait in line (in a queue).  They take a ticket and wait until
+      their ticket number is called.
+        So, to take the writer threads in order, add two global state variables:
+          int writer_ticket_number = 0;
+          int next_writer_ticket_to_be_served = 0;
+      When a writer enters the critical section to acquire a resource,
+      it should save the writer_ticket_number in a local variable, and then
+      increment the global writer_ticket_number.  Just before a writer
+      leaves the "acquire" critical section, it should increment the
+      global next_writer_ticket_to_be_served, so that this is one more
+      than the local writer_ticket_number of that writer thread.
+        Finally, change the function write_condition() to be a function of one
+      argument:
+        int write_condition(int writer_ticket_number);
+      The function should return 1 (true) only if this additional
+      condition is also true:
+        writer_ticket_number == next_writer_ticket_to_be_served
+      And of course, the "while" loop (item b in the diagram in
+      condition-variables.pdf), should be modified to call:
+        write_condition(writer_ticket_number);

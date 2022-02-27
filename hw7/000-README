@@ -1,0 +1,138 @@
+			      Homework 7
+			 DUE:  Monday, Nov. 22 
+
+In this homework, you will practice using mutexes (mutual exclusion)
+to create critical sections in your code where only one thread may
+execute at a time.  This will allow you to safely use variables that
+are shared among multiple threads.  You will also write an improved
+solution using semaphores.
+
+The concepts to be covered in this homework and the next one are subtle.
+In order to better understand the concepts, please carefully review the
+course lectures and the corresponding sections in the "Concurrency"
+section of the textbook, ostep.org.  The appropriate sections from
+ostep.org are listed in the syllabus.  Note also my own lecture
+notes on threads, provided at: 
+  https://course.ccs.neu.edu/cs3650/parent/thread-synch/
+
+You will solve the dining philosopher problem.  The dining philosopher
+problem is stated in this Wikipedia article:
+  https://en.wikipedia.org/wiki/Dining_philosophers_problem
+(I sometimes refer to the utensils as chopsticks, but Wikipedia is
+correct in stating that the original formulation required each
+philosopher to use two forks.)
+
+This homework has three parts:
+
+In Part 1, you will analyze the given naive solution (with mutexes)
+for Dining Philosophers, which could deadlock due to a race condition.
+When you run the given naive solution, it appears to work, and the
+deadlock is not exhibited.  You will then run the mcmini tool, which
+will show that deadlock can still occur.
+
+In Part 2, you will write a correct solution to Dining Philosophers,
+still using mutexes.
+
+In Part 3, you will implement an alternative solution to Dining
+Philosophers, using semaphores.
+
+
+======================
+PART 1: Dining Philosophers (using mcmini model checker)
+
+  Part 1 is intended for a first experience with model checking.
+  It is intended, on purpose, to be easy.  But please do play with this
+  model-checking tool.  As described in class, model checking is a
+  critical tool for testing.  We have unit tests, functional tests,
+  and so on.  But for multi-threaded programs, these traditional
+  tests fail miserably.  One important solution for multi-threaded
+  programs is model checking.
+
+  1. Unpack the mcmini.tgz tarball found in the course directory.
+       tar zxvf mcmini.tgz
+       cd mcmini
+  2. Read the "naive" code in test/mc-philosophers-deadlock.c.
+     Observe that there is a clear deadlock possible.
+  3. Make the executable:  (cd test && make mc-philosophers-deadlock)
+     Run the executable:   ./test/mc-philosophers-deadlock
+     ( Observe that this succeeds on login at Khoury, with all three
+       philosophers managing to eat.  We don't see any deadlock. )
+  4. Run:  ./mcmini --verbose test/mc-philosophers-deadlock
+     Observe that this produces a deadlock:  1, 2, 3
+     This means that thread 1 runs until a pthread call.
+     Then thread 2 runs until a pthread call.
+     Then thread 3 runs until a pthread call.
+     Then there is deadlock.  If any thread tries to execute further,
+       it is blocked at a mutex.
+
+  Then (based on what you see in McMini), please include in your text
+  file a brief description in which you explain in plain English which
+  resources are held by which threads, and for each thread, what mutex
+  will it block at next if it tries to continue executing.
+
+======================
+PART 2: Dining Philosophers (using mutexes correctly)
+
+In Part 2, you must fix the bug in Dining Philosophers using mutexes.
+Your solution must work for num_threads set to 6 or less.  The solution
+must allow more than one philosopher to potentially eat at the same time.
+
+SUGGESTED DESIGN:
+  Create a global mutex that is visible to all philosophers.  If a
+  philosopher wants to eat, insist that the philosopher should acquire the
+  global mutex before acquiring the the mutexes for the left and right
+  fork.  It should then release the global mutex before it eats (so that
+  another philosopher can attempt to eat at the same time).
+
+======================
+PART 3: Dining Philosophers (using semaphores)
+
+The problem of the dining philosophers occurs only when all
+philosophers try to eat at the same time.  So, we can avoid
+deadlock if we can guarantee that for N philosophers, no more
+than N-1 philosophers are allowed to dine at the same time.
+
+Add to the dining philosophers program some code that adds a
+semaphore, 'sem_t sem_dining;'.  It will have the English meaning
+of the number of philosophers allowed to dine in parallel.
+If we assume NUM_THREADS philosophers, then we should initialize
+'sem_dining' to NUM_THREADS-1.  Before a philosopher can try to grab
+any fork, it must first do a sem_wait on 'sem_dining', and it
+must call 'sem_post' when it is done dining.
+
+[ Unfortunately, mcmini is not yet able to handle semaphores.  That
+  is planned for a future version.  So, you will have to test your
+  code the old-fashioned way. ]
+
+MOTIVATION (WHEN IS THIS ALTERNATIVE SOLUTION BETTER?):
+  This solution is more efficient than the one using a global mutex.
+  The problem with the previous solution is that if philosopher A is
+  eating, then philosopher B will succeed in acquiring the global mutex.
+  But philosopher B will then try to acquire its left fork, and it will
+  have to wait until philosopher A is finished eating.  In the meantime,
+  no other philosopher can begin to eat, because they must first acquire
+  the global mutex, and philosopher B is still holding the global mutex.
+
+======================
+HAND IN:  hw7
+By the due date, you will have to submit these things in your .tar.gz file:
+ 1. your source code (e.g., part2-philosophers-mutex.c,
+    part3-philosophers-sem.c, etc.)
+ 2. a working Makefile
+ 3. the output of running your program on a computer with at least
+      6 cores (e.g., Khoury's login), to show correct performance.
+      An easy way to do this might be:  ./philosophers > output.txt
+      If you'd like to monitor the progress, try:
+        ./philosophers | tee - > output.txt
+ 5. part1-output-mcmini.txt (the output for Part 1, including both the mcmini
+      output, and
+ 6. a text file for Part 1, explaining why the trace leads to deadlock.
+
+Place all of your files in a subdirectory, hw7.
+Then:
+  tar cvf hw7.tar ./hw7
+  gzip hw7.tar
+Or simply:
+  tar zcvf hw7.tar.gz ./hw7
+Then:
+  /course/cs7600/homework/submit-cs7600-hw7 hw7.tar.gz
